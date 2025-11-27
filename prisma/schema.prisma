@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model TeamMember {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  phone       String
+  createdAt   DateTime  @default(now())
+  leads       Lead[]
+  calls       Call[]
+  messages    Message[]
+}
+
+model Lead {
+  id              String    @id @default(cuid())
+  firstName       String
+  lastName        String
+  phone           String
+  email           String?
+  company         String?
+  status          String    @default("new") // new, contacted, qualified, not_interested, converted
+  notes           String?
+  assignedToId    String?
+  assignedTo      TeamMember? @relation(fields: [assignedToId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  calls           Call[]
+  messages        Message[]
+}
+
+model Call {
+  id              String    @id @default(cuid())
+  leadId          String
+  lead            Lead      @relation(fields: [leadId], references: [id])
+  teamMemberId    String
+  teamMember      TeamMember @relation(fields: [teamMemberId], references: [id])
+  twilioCallSid   String?   @unique
+  direction       String    // inbound, outbound
+  duration        Int?      // in seconds
+  status          String    // queued, ringing, in-progress, completed, failed, busy, no-answer
+  recordingUrl    String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+}
+
+model Message {
+  id              String    @id @default(cuid())
+  leadId          String
+  lead            Lead      @relation(fields: [leadId], references: [id])
+  teamMemberId    String?
+  teamMember      TeamMember? @relation(fields: [teamMemberId], references: [id])
+  twilioMessageSid String?  @unique
+  direction       String    // inbound, outbound
+  body            String
+  status          String    // queued, sending, sent, delivered, failed
+  createdAt       DateTime  @default(now())
+}
